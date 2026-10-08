@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — KUP Live Poll</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2228%22>👑</text></svg>">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <nav class="navbar">
+    <a href="/admin" class="brand">
+      <div class="brand-logo">KUP</div>
+      <div class="brand-text">
+        <span class="brand-title">KUP LIVE POLL</span>
+        <span class="brand-subtitle">Host & Admin Control Center</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <div id="pollStatusBadge" class="status-badge status-draft">Draft Mode</div>
+      <a href="/result" target="_blank" class="nav-link">📺 Open Result Display</a>
+      <a href="/audience" target="_blank" class="nav-link">👥 Audience View</a>
+    </div>
+  </nav>
+
+  <main class="container" style="padding-top: 1.5rem; padding-bottom: 3rem;">
+
+    <!-- Top Status Bar & Session Sharing -->
+    <div class="card card-gold-border" style="margin-bottom: 1.5rem;">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">ACTIVE SESSION ID</span>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+            <span id="activePollId" style="font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px;">KUP-....</span>
+            <button id="btnCopyId" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Copy ID</button>
+          </div>
+        </div>
+
+        <!-- Share Audience Link -->
+        <div style="flex: 1; max-width: 500px; min-width: 280px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">AUDIENCE JOIN LINK</span>
+          <div class="share-box" style="margin-top: 0.25rem;">
+            <input type="text" id="audienceShareUrl" class="share-link-input" readonly value="http://localhost:3000/audience">
+            <button id="btnCopyLink" class="btn btn-cyan" style="padding: 0.4rem 0.9rem; font-size: 0.85rem; white-space: nowrap;">📋 Copy Link</button>
+            <button id="btnToggleQR" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">📱 QR Code</button>
+          </div>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button id="btnCreateNewPoll" class="btn btn-secondary">
+            ➕ New Poll
+          </button>
+        </div>
+      </div>
+
+      <!-- QR Code Dropdown / Drawer -->
+      <div id="qrDrawer" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: center;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Scan with any mobile phone camera or QR scanner to join instantly:
+        </p>
+        <div class="qr-preview">
+          <img id="qrCodeImg" src="" alt="Audience Join QR Code">
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Timer & Real-Time Audience Stats (Highlighted when Live or Ended) -->
+    <div id="liveStatusContainer" class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(15, 22, 56, 0.9), rgba(8, 12, 29, 0.9)); border-color: rgba(0, 245, 212, 0.3);">
+      
+      <!-- Synchronized 2-Minute Timer Display -->
+      <div class="timer-container">
+        <span class="timer-icon">⏱️</span>
+        <span class="timer-label">Time Remaining:</span>
+        <span id="adminTimerDisplay" class="timer-display">02:00</span>
+      </div>
+
+      <!-- Live Counters Grid -->
+      <div class="grid-4" style="margin-top: 1rem;">
+        <div class="stat-card">
+          <div class="stat-label">Audience Joined</div>
+          <div id="statTotalAudience" class="stat-value" style="color: var(--accent-cyan);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Responses Received</div>
+          <div id="statTotalResponses" class="stat-value" style="color: var(--accent-gold);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unanswered</div>
+          <div id="statUnanswered" class="stat-value" style="color: var(--text-dim);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Response Rate</div>
+          <div id="statResponseRate" class="stat-value" style="color: #10b981;">0%</div>
+        </div>
+      </div>
+
+      <!-- Live Option Breakdown Bars -->
+      <div id="liveBreakdownBars" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
+        <h4 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 1rem;">
+          Live Option Counts:
+        </h4>
+        <div id="liveOptionsBarsContainer">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Live Controls -->
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+        <button id="btnEndPollLive" class="btn btn-danger btn-lg" style="display: none;">
+          ⏹️ End Poll Manually
+        </button>
+      </div>
+    </div>
+
+    <!-- Question Editor Panel (Editable in Draft Mode) -->
+    <div id="questionEditorCard" class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-title">
+        <span>📝 Question & Options Editor</span>
+        <span id="editorLockNotice" style="font-size: 0.8rem; color: var(--accent-gold); display: none;">🔒 Locked during live poll</span>
+      </div>
+
+      <form id="pollEditorForm">
+        <div class="form-group">
+          <label class="form-label" for="questionInput">Question Text</label>
+          <textarea id="questionInput" class="form-textarea" rows="2" placeholder="Enter your question here..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="form-label" style="margin-bottom: 0;">Poll Options (2 to 4 options)</label>
+            <button type="button" id="btnAddOption" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+              ➕ Add Option
+            </button>
+          </div>
+
+          <div id="optionsContainer">
+            <!-- Dynamic option rows (A, B, C, D) generated via JavaScript -->
+          </div>
+          <small style="color: var(--text-dim); font-size: 0.8rem;">
+            * You can configure 2, 3, or 4 options for each question.
+          </small>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <label class="form-label" style="margin-bottom: 0;" for="durationSelect">Duration:</label>
+            <select id="durationSelect" class="form-select" style="width: 140px; padding: 0.5rem 0.8rem;">
+              <option value="120" selected>2 Minutes (120s)</option>
+              <option value="60">1 Minute (60s)</option>
+              <option value="90">1.5 Minutes (90s)</option>
+              <option value="30">30 Seconds (Test)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" id="btnSaveDraft" class="btn btn-secondary">
+              💾 Save Question
+            </button>
+            <button type="button" id="btnStartPoll" class="btn btn-primary btn-lg">
+              ▶️ START POLL
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Final Results Section (KBC Bar Chart Display) -->
+    <div id="resultsCard" class="card card-gold-border" style="display: none; margin-bottom: 2rem;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="status-badge status-ended" style="margin-bottom: 0.75rem;">Poll Concluded</div>
+        <h2 style="font-family: var(--font-display); font-size: 2.2rem; font-weight: 800; color: #ffffff; letter-spacing: 1px;">
+          🎯 LIVE AUDIENCE RESULT
+        </h2>
+        <div class="kbc-question-frame" style="max-width: 800px; margin: 1rem auto;">
+          <div class="kbc-question-label">QUESTION</div>
+          <div id="resultQuestionText" class="kbc-question-text">
+            Question will appear here
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Metric Cards -->
+      <div class="grid-3" style="margin-bottom: 1.5rem;">
+        <div class="stat-card">
+          <div class="stat-label">Total Audience</div>
+          <div id="finalTotalAudience" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Responses</div>
+          <div id="finalTotalResponses" class="stat-value" style="color: var(--accent-gold);">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unanswered</div>
+          <div id="finalUnanswered" class="stat-value" style="color: #ef4444;">0</div>
+        </div>
+      </div>
+
+      <!-- Chart.js Canvas -->
+      <div class="chart-container">
+        <canvas id="audienceResultsChart"></canvas>
+      </div>
+
+      <!-- Percentage Table Summary -->
+      <div style="margin-top: 2rem;">
+        <h4 style="font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-gold); margin-bottom: 0.75rem;">
+          Option Percentage Breakdown:
+        </h4>
+        <div id="breakdownCardsGrid" class="grid-4">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+      <!-- Action buttons at the bottom of result -->
+      <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <button id="btnCreateNewPollFromResults" class="btn btn-primary btn-lg">
+          ➕ CREATE NEW POLL
+        </button>
+        <a href="/result" target="_blank" class="btn btn-cyan btn-lg">
+          📺 Open Studio Projector View
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Confirm End Poll Modal -->
+  <div id="endPollModal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">⚠️</div>
+      <h3 class="modal-title">End Poll Early?</h3>
+      <p class="modal-message">
+        Are you sure you want to end this poll? Connected audience members will no longer be able to submit their answers, and final results will be calculated immediately.
+      </p>
+      <div class="modal-actions">
+        <button id="btnCancelEndPoll" class="btn btn-secondary">Cancel</button>
+        <button id="btnConfirmEndPoll" class="btn btn-danger">Yes, End Poll</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

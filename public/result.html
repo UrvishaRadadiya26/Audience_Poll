@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Audience Result — KUP Live Poll (Studio Screen)</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2228%22>📊</text></svg>">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Confetti script for grand KBC reveal celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body style="background: radial-gradient(circle at center top, #141d4b 0%, #080c1d 85%);">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-logo">KUP</div>
+      <div class="brand-text">
+        <span class="brand-title">KUP LIVE POLL</span>
+        <span class="brand-subtitle">Studio Audience Display</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <div id="resultStatusBadge" class="status-badge status-live">Live Sync</div>
+      <span id="displayPollId" style="font-family: monospace; font-size: 1.1rem; color: var(--accent-gold); font-weight: 700;">KUP-....</span>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width: 1100px; padding-top: 1.5rem; padding-bottom: 3rem;">
+
+    <!-- Presentation Header -->
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <h1 style="font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase;">
+        🎯 LIVE AUDIENCE RESULT
+      </h1>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 0.5rem;">
+        <span id="activeTimerBadge" class="status-badge status-draft" style="font-size: 0.9rem; padding: 0.35rem 1rem;">
+          ⏱️ Timer: <span id="displayTimer" style="font-family: var(--font-display); font-weight: 800; margin-left: 4px;">02:00</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Question Box -->
+    <div class="kbc-question-frame" style="margin-bottom: 2rem;">
+      <div class="kbc-question-label">POLL QUESTION</div>
+      <div id="presentationQuestion" class="kbc-question-text" style="font-size: 1.65rem;">
+        Waiting for poll question...
+      </div>
+    </div>
+
+    <!-- Main Results Card with Large Bar Chart -->
+    <div class="card card-gold-border" style="padding: 2rem; margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">
+          Audience Voting Distribution
+        </h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Real-Time Response Feed</span>
+      </div>
+
+      <div class="chart-container" style="height: 420px;">
+        <canvas id="bigScreenChart"></canvas>
+      </div>
+
+      <!-- Percentage Highlights Grid -->
+      <div id="percentageGrid" class="grid-4" style="margin-top: 2rem;">
+        <!-- Injected via result.js -->
+      </div>
+    </div>
+
+    <!-- Metrics Cards Below The Chart -->
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Total Audience Joined</div>
+        <div id="metricTotalAudience" class="stat-value" style="color: var(--accent-cyan); font-size: 2.5rem;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Responses Received</div>
+        <div id="metricTotalResponses" class="stat-value" style="color: var(--accent-gold); font-size: 2.5rem;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Unanswered / No Response</div>
+        <div id="metricUnanswered" class="stat-value" style="color: #ef4444; font-size: 2.5rem;">0</div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/js/result.js"></script>
+</body>
+</html>

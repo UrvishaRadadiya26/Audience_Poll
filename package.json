@@ -1,0 +1,28 @@
+{
+  "name": "kup-live-poll",
+  "version": "1.0.0",
+  "description": "KUP Live Poll - Real-Time KBC Style Audience Polling Web Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "live-poll",
+    "audience-poll",
+    "kbc",
+    "socket.io",
+    "real-time",
+    "express"
+  ],
+  "author": "KUP Team",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}

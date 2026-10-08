@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KUP Live Poll — KBC Style Audience Polling</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2228%22>🎯</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-logo">KUP</div>
+      <div class="brand-text">
+        <span class="brand-title">KUP LIVE POLL</span>
+        <span class="brand-subtitle">Kairavi • Urvisha • Purva</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/admin" class="nav-link">Admin Panel</a>
+      <a href="/audience" class="nav-link active">Audience Join</a>
+      <a href="/result" class="nav-link">Big Screen Result</a>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width: 900px; padding-top: 2.5rem;">
+    <!-- Hero Header -->
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <div class="status-badge status-live" style="margin-bottom: 1rem;">
+        Real-Time Live Audience Polling
+      </div>
+      <h1 style="font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; line-height: 1.1; margin-bottom: 1rem; background: linear-gradient(135deg, #ffffff, var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        KBC-Style Live Audience Poll
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.15rem; max-width: 640px; margin: 0 auto;">
+        Admin launches the question & options, audience gets a synchronized 2-minute countdown timer, and results animate live on a dynamic Bar Chart!
+      </p>
+    </div>
+
+    <div class="grid-2">
+      <!-- Audience Quick Join Card -->
+      <div class="card card-gold-border">
+        <h2 class="card-title">
+          <span>👥 Join Live Poll</span>
+          <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: 600;">AUDIENCE</span>
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+          Enter the Session Code shared by your host and your name to participate in the live audience poll.
+        </p>
+
+        <form id="quickJoinForm">
+          <div class="form-group">
+            <label class="form-label" for="pollIdInput">Poll Session ID</label>
+            <input type="text" id="pollIdInput" class="form-input" placeholder="e.g. KUP-4821" required style="font-family: monospace; font-size: 1.1rem; text-transform: uppercase;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="audienceNameInput">Your Full Name</label>
+            <input type="text" id="audienceNameInput" class="form-input" placeholder="Enter your name" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block">
+            🚀 Join Poll Now
+          </button>
+        </form>
+      </div>
+
+      <!-- Admin & Control Portal Card -->
+      <div class="card">
+        <h2 class="card-title">
+          <span>👑 Host Controls</span>
+          <span style="font-size: 0.8rem; color: var(--accent-cyan); font-weight: 600;">ADMIN</span>
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+          Create questions, customize 2 to 4 options, start the 2-minute live countdown timer, and view real-time audience charts.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+          <a href="/admin" class="btn btn-cyan btn-lg btn-block">
+            ⚙️ Open Admin Dashboard
+          </a>
+          <a href="/result" class="btn btn-secondary btn-block">
+            📺 Open Big Screen TV Result View
+          </a>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent-gold); margin-bottom: 0.35rem;">
+            ✨ Features Included
+          </div>
+          <ul style="color: var(--text-muted); font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.6;">
+            <li>Exact 2-Minute Server-Authoritative Timer</li>
+            <li>QR Code for Instant Mobile Scanning</li>
+            <li>Interactive Chart.js Live Bar Chart</li>
+            <li>Single-submission validation & reconnect preservation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Quick Join logic
+    document.getElementById('quickJoinForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pollId = document.getElementById('pollIdInput').value.trim().toUpperCase();
+      const name = document.getElementById('audienceNameInput').value.trim();
+      if (!pollId || !name) return;
+
+      // Save name to localStorage
+      localStorage.setItem('kup_audience_name', name);
+      window.location.href = `/audience/${pollId}`;
+    });
+
+    // Check if there is an active poll currently running
+    fetch('/api/poll/current')
+      .then(r => r.json())
+      .then(data => {
+        if (data.poll && data.poll.pollId) {
+          const input = document.getElementById('pollIdInput');
+          if (input && !input.value) {
+            input.value = data.poll.pollId;
+          }
+        }
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

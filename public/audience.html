@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audience Poll — KUP Live Poll</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2226%22 font-size=%2228%22>🙋</text></svg>">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-logo">KUP</div>
+      <div class="brand-text">
+        <span class="brand-title">KUP LIVE POLL</span>
+        <span class="brand-subtitle">Audience Portal</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <div id="connectionStatus" class="status-badge status-draft">Connecting...</div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width: 720px; padding-top: 1.5rem; padding-bottom: 3rem;">
+
+    <!-- 1. Join / Name Screen -->
+    <div id="joinScreen" class="card card-gold-border" style="display: block;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="status-badge status-live" style="margin-bottom: 0.75rem;">Live Audience Participation</div>
+        <h2 style="font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: #ffffff;">
+          Enter Your Details
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Join the live KBC audience poll and submit your vote!
+        </p>
+      </div>
+
+      <form id="joinForm">
+        <div class="form-group">
+          <label class="form-label" for="pollIdField">Poll Session Code</label>
+          <input type="text" id="pollIdField" class="form-input" placeholder="e.g. KUP-4821" required style="font-family: monospace; font-size: 1.15rem; text-transform: uppercase;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="nameField">Your Name</label>
+          <input type="text" id="nameField" class="form-input" placeholder="Enter your full name" required autocomplete="name">
+        </div>
+
+        <button type="submit" id="btnJoinPoll" class="btn btn-primary btn-lg btn-block" style="margin-top: 1rem;">
+          🚀 JOIN LIVE POLL
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. Waiting Screen (Draft Mode / Not Started Yet) -->
+    <div id="waitingScreen" class="card" style="display: none; text-align: center; padding: 3rem 1.5rem;">
+      <div style="font-size: 3.5rem; margin-bottom: 1rem; animation: pulse-dot 1.8s infinite;">
+        ⏳
+      </div>
+      <h2 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem;">
+        Welcome, <span id="welcomeAudienceName" style="color: var(--accent-gold);">Audience</span>!
+      </h2>
+      <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 1.5rem;">
+        You have joined Poll <strong id="waitingPollId" style="color: var(--accent-cyan); font-family: monospace;">KUP-....</strong>
+      </p>
+
+      <div style="padding: 1.25rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); max-width: 440px; margin: 0 auto; border: 1px solid rgba(255,255,255,0.06);">
+        <p style="color: var(--accent-cyan); font-weight: 600; font-size: 1rem;">
+          Waiting for the host to start the poll...
+        </p>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">
+          As soon as the poll begins, you will see the question with exactly <strong id="waitingDurationLabel">2 minutes</strong> to submit your response.
+        </p>
+      </div>
+    </div>
+
+    <!-- 3. Active Poll Question & Options Screen -->
+    <div id="activePollScreen" style="display: none;">
+
+      <!-- Server-Synchronized 2-Minute Timer -->
+      <div class="timer-container">
+        <span class="timer-icon">⏱️</span>
+        <span class="timer-label">Time Remaining:</span>
+        <span id="audienceTimerDisplay" class="timer-display">02:00</span>
+      </div>
+
+      <!-- KBC Question Frame -->
+      <div class="kbc-question-frame">
+        <div class="kbc-question-label">AUDIENCE POLL QUESTION</div>
+        <div id="audienceQuestionText" class="kbc-question-text">
+          Question Loading...
+        </div>
+      </div>
+
+      <!-- KBC Option Cards (A, B, C, D) -->
+      <div id="audienceOptionsGrid" class="kbc-options-grid">
+        <!-- Dynamically injected via audience.js -->
+      </div>
+
+      <!-- Submission Status Message Box -->
+      <div id="submissionAlert" style="display: none; margin-bottom: 1.5rem; padding: 1.25rem; border-radius: var(--radius-md); text-align: center;">
+        <!-- Filled on submission -->
+      </div>
+
+      <!-- Submit Action Button -->
+      <button id="btnSubmitAnswer" class="btn btn-primary btn-lg btn-block" disabled>
+        🔒 SUBMIT ANSWER
+      </button>
+
+      <div style="text-align: center; margin-top: 1rem; color: var(--text-dim); font-size: 0.85rem;">
+        * You can select only one option. Once submitted, your response is locked.
+      </div>
+    </div>
+
+    <!-- 4. Poll Ended / Closed Screen -->
+    <div id="pollEndedScreen" class="card card-gold-border" style="display: none; text-align: center; padding: 3rem 1.5rem; margin-top: 1rem;">
+      <div style="font-size: 3.5rem; margin-bottom: 1rem;">
+        🏁
+      </div>
+      <div class="status-badge status-ended" style="margin-bottom: 0.75rem;">Poll Closed</div>
+      <h2 style="font-family: var(--font-display); font-size: 2.2rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem;">
+        Thank You for Participating!
+      </h2>
+      <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 1.5rem auto;">
+        The 2-minute time window has ended. Your host is now displaying the overall audience responses on the studio bar chart!
+      </p>
+
+      <div id="userParticipationSummary" style="padding: 1rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); max-width: 380px; margin: 0 auto; border: 1px solid rgba(255,255,255,0.08);">
+        <!-- Injected summary of what user answered -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/js/audience.js"></script>
+</body>
+</html>
